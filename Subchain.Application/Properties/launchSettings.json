@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Subchain.Application (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Subchain.Application (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
