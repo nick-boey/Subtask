@@ -1,6 +1,4 @@
-﻿using System.Dynamic;
-
-namespace Subchain.Tasks
+﻿namespace Subchain.Tasks
 {
     /// <summary>
     /// A task.
@@ -8,16 +6,11 @@ namespace Subchain.Tasks
     public class Task
     {
         #region Members
-        /// <summary>
-        /// The subtasks of the task stored in a HashSet.
-        /// </summary>
-        private List<Task> _subtasks { get; set; } = [];
-
-        /// <summary>
-        /// True if the task is on the current path, false otherwise. Is set by the UpdateNext method.
-        /// </summary>
+        private readonly List<Task> _subtasks = [];
         private bool _isNext = false;
-
+        private bool _isCritical = false;
+        private readonly DateTime _creationDate = DateTime.Now;
+        private TaskStatus _taskStatus = TaskStatus.NotStarted;
         #endregion
 
         #region Properties
@@ -39,7 +32,38 @@ namespace Subchain.Tasks
         /// <summary>
         /// The status of the task.
         /// </summary>
-        public TaskStatus Status { get; set; } = TaskStatus.NotStarted;
+        public TaskStatus Status
+        {
+            get => _taskStatus;
+            set
+            {
+                // Update the start and completion dates based on the status
+                switch (value)
+                {
+                    case TaskStatus.NotStarted:
+                        StartDate = null;
+                        CompletionDate = null;
+                        break;
+
+                    case TaskStatus.InProgress:
+                        if (_taskStatus != TaskStatus.InProgress)
+                        {
+                            StartDate = DateTime.Now;
+                            CompletionDate = null;
+                        }
+                        break;
+
+                    case TaskStatus.Complete:
+                        if (_taskStatus != TaskStatus.Complete)
+                        {
+                            CompletionDate = DateTime.Now;
+                        }
+                        break;
+                }
+
+                _taskStatus = value;
+            }
+        }
 
         /// <summary>
         /// The subtasks of the task. Use AddSubtask and RemoveSubtask to modify the subtasks.
@@ -87,7 +111,7 @@ namespace Subchain.Tasks
         /// <summary>
         /// True if the task is on the current path, false otherwise. Is set by the UpdateNext method.
         /// </summary>
-        public bool IsNext
+        public bool IsActive
         {
             get
             {
@@ -110,6 +134,10 @@ namespace Subchain.Tasks
             }
         }
 
+        /// <summary>
+        /// True if the task is on the critical path, false otherwise. Is set by the UpdateNext method.
+        /// </summary>
+        public bool IsCritical { get => _isCritical; set => _isCritical = value; }
 
         /// <summary>
         /// The buffer time for the task, in minutes. Based on the due date.
@@ -130,12 +158,19 @@ namespace Subchain.Tasks
         /// <summary>
         /// The date that the task became active.
         /// </summary>
+        // TODO: Consider whether this should be able to be set
         public DateTime? ActiveDate { get; set; } = null;
 
         /// <summary>
         /// The date that the task was completed.
         /// </summary>
+        // TODO: Consider whether this should be able to be set
         public DateTime? CompletionDate { get; set; } = null;
+
+        /// <summary>
+        /// The date that the task was created.
+        /// </summary>
+        public DateTime CreationDate { get => _creationDate; }
 
         /// <summary>
         /// The amount of time the task was active for, in minutes.
@@ -260,29 +295,65 @@ namespace Subchain.Tasks
                 subtask.Parent = this;
 
                 // Update the subtasks
-                UpdateNext();
+                UpdateNextAndCritical();
             }
         }
 
+        /// <summary>
+        /// Insert a subtask at a specific index.
+        /// </summary>
+        /// <param name="subtask">Subtask to insert</param>
+        /// <param name="index">Index to insert the subtask at</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if the index is out of range of the Subtask list</exception>
         public void InsertSubtask(Task subtask, int index)
         {
+            if (index < 0 || index > _subtasks.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
+            }
 
+            if (_subtasks.Contains(subtask))
+            {
+                _subtasks.Insert(index, subtask);
+                subtask.Parent = this;
+                UpdateNextAndCritical();
+            }
         }
 
+        /// <summary>
+        /// Removes a subtask from the current task.
+        /// </summary>
+        /// <param name="subtask"></param>
         public void RemoveSubtask(Task subtask)
         {
+            _subtasks.Remove(subtask);
+            subtask.Parent = null;
+
+            // Update the subtasks
+            UpdateNextAndCritical();
+
         }
 
+        /// <summary>
+        /// Moves all subtasks from this task to another target task.
+        /// </summary>
+        /// <param name="target">The target task to move all subtasks to.</param>
+        /// <exception cref="NotImplementedException"></exception>
         public void MoveAllSubtasks(Task target)
         {
-
+            throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Moves a single subtask from this task to another target task.
+        /// </summary>
+        /// <param name="subtask">The task to be moved.</param>
+        /// <param name="target">The target task to move the subtask to.</param>
+        /// <exception cref="NotImplementedException"></exception>
         public void MoveSubtask(Task subtask, Task target)
         {
-
+            throw new NotImplementedException();
         }
-
 
         /// <summary>
         /// Updates the subtasks for this task to have the correct parent.
@@ -300,42 +371,64 @@ namespace Subchain.Tasks
         }
 
         /// <summary>
-        /// Updates the IsNext property for the task and all subtasks.
+        /// Updates the IsNext and IsCritical property for the task and all subtasks.
         /// </summary>
-        public void UpdateNext()
+        public void UpdateNextAndCritical()
         {
             // If the task has no parent, it by default is next on the execution list as the task is the root task
             if (Parent == null)
             {
-                IsNext = true;
+                IsActive = true;
+                IsCritical = true;
             }
             // If the task has a parent, the updating of IsNext is done by the parent task
             if (_subtasks.Count > 0)
             {
-                // If execution is parallel, all subtasks are next if the current task is next
                 if (SubtaskOrder == ExecutionOrder.Parallel)
                 {
+                    // The longest duration subtask is critical if the current task is critical
+                    IOrderedEnumerable<Task> tasksByDuration = _subtasks.OrderByDescending(t => t.CalculatedDuration);
+                    tasksByDuration.First().IsCritical = IsCritical;
+                    // Otherwise, the subtasks are not critical
+                    for (int i = 1; i < _subtasks.Count; i++)
+                    {
+                        tasksByDuration.ElementAt(i).IsCritical = false;
+                    }
+
+                    // If execution is parallel, all subtasks are next if the current task is next
                     foreach (Task t in _subtasks)
                     {
-                        t.IsNext = IsNext;
-                        t.UpdateNext();
+                        t.IsActive = IsActive;
+
+                        t.UpdateNextAndCritical();
                     }
                 }
                 // If execution is series, only the first subtask is next if the current task is next
                 // All others are off the path
                 else
                 {
-                    _subtasks.First().IsNext = IsNext;
-                    _subtasks.First().UpdateNext();
+                    // All series subtasks are critical if the current task is critical
+                    foreach (var t in _subtasks)
+                    {
+                        t.IsCritical = IsCritical;
+                    }
+
+                    // The first subtask is next if the current task is next
+                    _subtasks.First().IsActive = IsActive;
+                    _subtasks.First().UpdateNextAndCritical();
                     for (int i = 1; i < _subtasks.Count; i++)
                     {
-                        _subtasks.ElementAt(i).IsNext = false;
-                        _subtasks.ElementAt(i).UpdateNext();
+                        _subtasks.ElementAt(i).IsActive = false;
+                        _subtasks.ElementAt(i).UpdateNextAndCritical();
                     }
                 }
             }
+
         }
 
+        /// <summary>
+        /// Calculates the time buffer for the task based on the due date.
+        /// </summary>
         // TODO: Calculate the buffer of time for the tasks (i.e. when the task can be started)
         public void CalculateBuffer()
         {
