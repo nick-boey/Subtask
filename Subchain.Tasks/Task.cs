@@ -1,4 +1,7 @@
-﻿namespace Subchain.Tasks
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace Subchain.Tasks
 {
     /// <summary>
     /// A task.
@@ -11,6 +14,12 @@
         private bool _isCritical = false;
         private readonly DateTime _creationDate = DateTime.Now;
         private TaskStatus _taskStatus = TaskStatus.NotStarted;
+
+        private static readonly JsonSerializerOptions _jsonOptions = new()
+        {
+            WriteIndented = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
         #endregion
 
         #region Properties
@@ -78,6 +87,7 @@
         /// <summary>
         /// The parent to the current task.
         /// </summary>
+        [JsonIgnore]
         public Task? Parent { get; set; } = null;
 
         /// <summary>
@@ -88,6 +98,7 @@
         /// <summary>
         /// The calculated duration of the task, in minutes
         /// </summary>
+        [JsonIgnore]
         public int CalculatedDuration
         {
             get
@@ -111,6 +122,7 @@
         /// <summary>
         /// True if the task is on the current path, false otherwise. Is set by the UpdateNext method.
         /// </summary>
+        [JsonIgnore]
         public bool IsActive
         {
             get
@@ -137,12 +149,14 @@
         /// <summary>
         /// True if the task is on the critical path, false otherwise. Is set by the UpdateNext method.
         /// </summary>
+        [JsonIgnore]
         public bool IsCritical { get => _isCritical; set => _isCritical = value; }
 
         /// <summary>
         /// The buffer time for the task, in minutes. Based on the due date.
         /// </summary>
         /// TODO: Implement buffer time calculation
+        [JsonIgnore]
         public int Buffer { get; } = 0;
 
         /// <summary>
@@ -175,6 +189,7 @@
         /// <summary>
         /// The amount of time the task was active for, in minutes.
         /// </summary>
+        [JsonIgnore]
         public int ActiveTime
         {
             get
@@ -200,6 +215,7 @@
         /// <summary>
         /// The amount of time the task took to complete from the time it was started, in minutes.
         /// </summary>
+        [JsonIgnore]
         public int? CompletionTime
         {
             get
@@ -434,7 +450,36 @@
         {
 
         }
-    }
 
-    #endregion
+        #endregion
+
+        #region Serialization
+        /// <summary>
+        /// Serialize the task to a JSON string.
+        /// </summary>
+        /// <returns>A JSON string representation of the task.</returns>
+        public string ToJSON()
+        {
+            return JsonSerializer.Serialize(this, _jsonOptions);
+        }
+
+        /// <summary>
+        /// Create a task from a JSON string.
+        /// </summary>
+        /// <param name="json">JSON string to deserialize.</param>
+        /// <returns>The task that has been created.</returns>
+        public static Task FromJSON(string json)
+        {
+            var t = JsonSerializer.Deserialize<Task>(json, _jsonOptions);
+            if (t is not null)
+            {
+                return t;
+            }
+            else
+            {
+                throw new JsonException("Could not deserialize the JSON string.");
+            }
+        }
+        #endregion
+    }
 }

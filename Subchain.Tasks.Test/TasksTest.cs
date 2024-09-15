@@ -35,6 +35,8 @@ namespace Subchain.Tasks.Test
             t3.SubtaskOrder = ExecutionOrder.Series;
 
             t1.UpdateNextAndCritical();
+
+            Console.WriteLine(t1.ToJSON());
         }
 
         [TestMethod]
