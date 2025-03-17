@@ -109,7 +109,7 @@ impl TaskList {
     /// Add a new subtask to the task at a specific index
     pub fn add_new_subtask(&mut self, title: &str, pos: usize) -> &mut Self {
         // Look at the index above and match the depth
-        let depth = self.neighbour_depth(pos, &Direction::Up);
+        let depth = self.neighbour_depth(pos, &Direction::None);
         let task = Task::new(title, depth + 1);
         let task_pos = self.get_pos(pos, &Direction::None);
 
@@ -177,6 +177,7 @@ impl TaskList {
         self
     }
 
+    /// Check whether a task has any subtasks
     fn has_subtasks(&self, pos: usize) -> bool {
         // Check that the task is not at the end of the list, and that the task below it is not at the same depth or less.
         if pos >= self.len() - 1 {
@@ -247,54 +248,70 @@ impl TaskList {
         subtasks
     }
 
-    /// Promote a task by making all of its siblings below it children to this task.
-    fn promote_task(&mut self, task_id: &Uuid) -> &mut Self {
-        todo!();
+    /// Change the depth of a task by a given quantity.
+    fn change_task_depth(&mut self, pos: usize, depth_change: i8) -> &mut Self {
+        let Some(task) = self.tasks.get_mut(pos) else {
+            return self;
+        };
+
+        // Make sure that the depth does not go below 0
+        if task.depth > depth_change {
+            task.depth += depth_change
+        }
+
+        self
     }
 
-    /// Gets the position of a subtask within it's parent tasks list.
-    fn get_child_position(&self, task_id: &Uuid) -> Result<usize, TaskListError> {
-        todo!();
+    /// Promote a task by making all of its siblings by subtracting 1 from the task's depth.
+    /// This makes all the siblings below it children to this task.
+    pub fn promote_task(&mut self, pos: usize) -> &mut Self {
+        self.change_task_depth(pos, -1)
     }
 
     /// Demote a task by making it a child of the task above it.
     /// If the task above it is a subtask, make it a sibling of that subtask.
-    fn demote_task(&mut self, task_id: &Uuid) -> &mut Self {
-        todo!();
+    fn demote_task(&mut self, pos: usize) -> &mut Self {
+        self.change_task_depth(pos, 1)
     }
 
     /// Calculate the total duration of the task and its subtasks depending on their execution order.
-    fn calculate_task_duration(&self, task_id: &Uuid) -> i32 {
-        todo!();
-        /*
-        if let Some(task) = self.tasks.get(task_id) {
-            // If there are no subtasks, the expected duration of the subtask is as has been currently set
-            if task.subtasks.len() == 0 {
-                return task.expected_duration.unwrap_or(0);
-            }
-
-            // If there is are subtasks, calculate the duration as a maximum or sum of the subtask depending on the execution order
-            // This calls calculate_duration recursively
-            match task.execution_order {
-                // When in series, the duration is the sum of the subtasks
-                ExecutionOrder::Series => task
-                    .subtasks
-                    .iter()
-                    .map(|subtask| self.calculate_task_duration(subtask))
-                    .sum::<i32>(),
-                // When in parallel, the duration is the maximum of the subtasks
-                ExecutionOrder::Parallel => task
-                    .subtasks
-                    .iter()
-                    .map(|subtask| self.calculate_task_duration(subtask))
-                    .max()
-                    .unwrap_or(0),
-            }
-        } else {
-            // Return 0 if the task can't be found
+    /// Returns the total duration in minutes.
+    fn calculate_task_duration(&self, pos: usize) -> i32 {
+        let Ok(task) = self.get_task(pos) else {
             return 0;
+        };
+
+        let subtasks = self.get_direct_subtasks(pos);
+        if subtasks.is_empty() {
+            return task.expected_duration.unwrap_or(0);
         }
-        */
+
+        // Calculate the task duration recursively based on the execution order.
+        match task.execution_order {
+            // If the execution order is in series, the total duration is just the sum of all the subtask durations.
+            ExecutionOrder::Series => subtasks
+                .iter()
+                .map(|&subtask| self.calculate_task_duration(subtask))
+                .sum::<i32>(),
+            // If the execution order is in parallel, the total duration is the maximum duration of the subtasks.
+            ExecutionOrder::Parallel => subtasks
+                .iter()
+                .map(|&subtask| self.calculate_task_duration(subtask))
+                .max()
+                .unwrap_or(0),
+        }
+    }
+
+    /// Prints a simple debugging string representation of the task list.
+    fn print_debug(&self) -> String {
+        let mut result: String = String::new();
+        for task in self.tasks.iter() {
+            for _ in 0..task.depth {
+                result.push('>');
+            }
+            result.push_str(&format!("{}\r\n", task.title));
+        }
+        result
     }
 }
 
@@ -302,56 +319,46 @@ impl TaskList {
 mod tests {
     use super::*;
 
+    fn setup_task_list() -> TaskList {
+        let mut task_list = TaskList::new(&String::from("Task List"));
+        task_list.add_new_root_task_at_end(&String::from("Task 1"));
+        task_list.add_new_root_task_at_end(&String::from("Task 2"));
+        task_list.add_new_subtask(&String::from("Task 1.3"), 0);
+        task_list.add_new_subtask(&String::from("Task 1.2"), 0);
+        task_list.add_new_subtask(&String::from("Task 1.1"), 0);
+        task_list.add_new_subtask(&String::from("Task 2.3"), 4);
+        task_list.add_new_subtask(&String::from("Task 2.2"), 4);
+        task_list.add_new_subtask(&String::from("Task 2.1"), 4);
+        task_list.add_new_root_task_at_end(&String::from("Task 3"));
+        task_list
+    }
+
+    #[test]
+    fn debug_string_returns_accurate_string() {
+        let expected = "Task 1\r\n>Task 1.1\r\n>Task 1.2\r\n>Task 1.3\r\nTask 2\r\n>Task 2.1\r\n>Task 2.2\r\n>Task 2.3\r\nTask 3\r\n";
+
+        assert_eq!(setup_task_list().print_debug(), expected);
+    }
+
     #[test]
     fn add_new_root_task_at_end_increases_count() {
-        let mut task_list = TaskList::new(&String::from("Task List"));
-        // Test task creation
-        assert_eq!(task_list.len(), 0);
-        task_list.add_new_root_task_at_end(&String::from("Task 1"));
-        assert_eq!(task_list.len(), 1);
-        task_list.add_new_root_task_at_end(&String::from("Task 2"));
-        assert_eq!(task_list.len(), 2);
+        let mut task_list = setup_task_list();
+        assert_eq!(task_list.len(), 9);
+        task_list.add_new_root_task_at_end(&String::from("Task 4"));
+        assert_eq!(task_list.len(), 10);
     }
 
     #[test]
     fn add_new_task_adds_at_correct_position() {
-        let mut task_list = TaskList::new(&String::from("Task List"));
+        let mut task_list = setup_task_list();
 
-        // Adds at end of list
-        task_list.add_new_task(&String::from("Task 1"), 0);
         // Adds at start of list, pushing Task 1 down
-        task_list.add_new_task(&String::from("Task 2"), 0);
-        // Adds at middle lof list, pushing Task 1 down
-        task_list.add_new_task(&String::from("Task 3"), 1);
-        // Resulting order should be Task 2, Task 3, Task 1
+        task_list.add_new_task(&String::from("Task 0"), 0);
+        // Adds at middle of list, becoming parent of Task 1.3
+        task_list.add_new_task(&String::from("Task 4"), 4);
 
-        let mut task_string = String::new();
-        for task in task_list.tasks.iter() {
-            task_string.push_str(&task.title);
-            task_string.push_str(";")
-        }
-        assert_eq!(task_string, "Task 2;Task 3;Task 1;");
-    }
+        let expected = "Task 0\r\nTask 1\r\n>Task 1.1\r\n>Task 1.2\r\n>Task 4\r\n>Task 1.3\r\nTask 2\r\n>Task 2.1\r\n>Task 2.2\r\n>Task 2.3\r\nTask 3\r\n";
 
-    #[test]
-    fn add_new_subtask_adds_at_correct_position() {
-        let mut task_list = TaskList::new(&String::from("Task List"));
-
-        // Adds at end of list
-        task_list.add_new_root_task_at_end(&String::from("Task 1"));
-        // Adds at end of list
-        task_list.add_new_root_task_at_end(&String::from("Task 2"));
-        // Add subtask to Task 1
-        task_list.add_new_subtask(&String::from("Task 1.1"), 0);
-
-        let mut task_string = String::new();
-        for task in task_list.tasks.iter() {
-            task_string.push_str(&format!(
-                "{} ({});",
-                task.title.clone(),
-                task.depth.to_string()
-            ));
-        }
-        assert_eq!(task_string, "Task 1 (0);Task 1.1 (1);Task 2 (0);");
+        assert_eq!(task_list.print_debug(), expected);
     }
 }
