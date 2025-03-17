@@ -1,13 +1,12 @@
-﻿use super::{enums::ExecutionOrder, Task};
+﻿use crate::tasks::task::{ExecutionOrder, Task};
 use std::collections::HashMap;
-use uuid::Uuid;
 
-enum TaskListError {
+pub enum TaskListError {
     TaskOutOfBoundsError,
     TaskNotFoundError,
 }
 
-enum Direction {
+pub enum Direction {
     None,
     Up,
     Down,
@@ -15,7 +14,7 @@ enum Direction {
 }
 
 /// A list of tasks, acting as a container for the tasks held.
-struct TaskList {
+pub struct TaskList {
     /// The name of the task list
     name: String,
     /// The primary linear collection of tasks

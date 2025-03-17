@@ -1,0 +1,1 @@
+﻿// A home screen for the application.
