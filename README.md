@@ -2,19 +2,18 @@
 
 ## Keybindings
 
-`h` - Go to parent task
-`j` - Go down one task
-`k` - Go up one task
-`l` - Go to child task
-`v` - Selection mode
-`ALT + j` - Move child up one level
-`ALT + k` - Move child down one level
-`TAB` - Demote subtask
-`SHIFT + TAB` - Promote subtask
-`f` - Toggle folding of task
+- `h` - Go to parent task
+- `j` - Go down one task
+- `k` - Go up one task
+- `l` - Go to child task
+- `v` - Selection mode
+- `ALT + j` - Move child up one level
+- `ALT + k` - Move child down one level
+- `TAB` - Demote subtask
+- `SHIFT + TAB` - Promote subtask
+- `f` - Toggle folding of task
 
 ## Relevant characters
-
 
 ```
 Links: ╭╮╯╰─│
@@ -44,6 +43,7 @@ Tasks: ○ = not done
 ├─○ Task
 │  
 ╰─○ Task
+
 ○ Task
 ```
 
