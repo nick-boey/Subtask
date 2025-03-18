@@ -1,5 +1,5 @@
 ﻿use crate::tasks::task::{ExecutionOrder, Render, Task};
-use std::cmp::Ordering;
+use std::cmp::{min, Ordering};
 use std::collections::HashMap;
 
 pub enum TaskListError {
@@ -316,47 +316,58 @@ impl TaskList {
     }
 }
 
+/// Renders a joiner between two tasks provided their depths.
+/// Doesn't render joiners longer than three characters.
+fn create_joiner_from_depths(depth_above: i8, depth_below: i8) -> String {
+    let mut result: String = String::new();
+    let depth_diff = depth_below - depth_above;
+
+    if !(-1..=1).contains(&depth_diff) {
+        return "\r\n".to_string();
+    }
+
+    result.push_str(
+        " ".repeat(min(depth_above as usize, depth_below as usize) * 2)
+            .as_str(),
+    );
+    match depth_diff {
+        1 => {
+            // Create a ╰─╮ joiner
+            result.push_str("╰─╮\r\n");
+        }
+        0 => {
+            // Create a │ joiner
+            result.push_str(" ".repeat((depth_above * 2) as usize).as_str());
+            result.push_str("│\r\n");
+        }
+        -1 => {
+            // Create a ╭─╯ joiner
+            result.push_str(" ".repeat((depth_below * 2) as usize).as_str());
+            result.push_str("╭─╯\r\n");
+        }
+        _ => {
+            return "\r\n".to_string();
+        }
+    }
+
+    result
+}
+
 impl Render for TaskList {
+    /// Renders the task list to a string
     fn render(&self) -> String {
         let mut result: String = String::new();
-        let mut prev_task: Option<&Task> = None;
-        for task in self.tasks.iter() {
-            // Render a joiner between the tasks
-            if let Some(prev_task) = prev_task {
-                match task.depth.cmp(&prev_task.depth) {
-                    Ordering::Less => {
-                        // Push a ╰─╮ joiner
-                        result.push_str(" ".repeat(prev_task.depth as usize).as_str());
-                        result.push('╰');
-                        result.push_str(
-                            "─"
-                                .repeat((task.depth - prev_task.depth - 2) as usize)
-                                .as_str(),
-                        );
-                        result.push_str("╮\r\n");
-                    }
-                    Ordering::Equal => {
-                        // Push a │ joiner
-                        result.push_str(" ".repeat(prev_task.depth as usize).as_str());
-                        result.push_str("│\r\n");
-                    }
-                    Ordering::Greater => {
-                        // Push a ╭─╯ joiner
-                        result.push_str(" ".repeat(prev_task.depth as usize).as_str());
-                        result.push('╭');
-                        result.push_str(
-                            "─"
-                                .repeat((task.depth - prev_task.depth - 2) as usize)
-                                .as_str(),
-                        );
-                        result.push_str("╯\r\n");
-                    }
-                }
-            };
-            dbg!(&result);
-            // Add the task and reset the previous task reference
+
+        for (pos, task) in self.tasks.iter().enumerate() {
+            // Create a joiner for every task except the first
+            if pos != 0 {
+                result.push_str(&create_joiner_from_depths(
+                    self.neighbour_depth(pos, &Direction::Up),
+                    task.depth,
+                ));
+            }
+            // Render the task
             result.push_str(&task.render());
-            prev_task = Some(task);
         }
         result
     }
@@ -407,5 +418,15 @@ mod tests {
         let expected = "Task 0\r\nTask 1\r\n>Task 1.1\r\n>Task 1.2\r\n>Task 4\r\n>Task 1.3\r\nTask 2\r\n>Task 2.1\r\n>Task 2.2\r\n>Task 2.3\r\nTask 3\r\n";
 
         assert_eq!(task_list.print_debug(), expected);
+    }
+
+    #[test]
+    fn create_joiner_at_depths_correct_joiner() {
+        assert_eq!(create_joiner_from_depths(0, 1), "╰─╮\r\n");
+        assert_eq!(create_joiner_from_depths(1, 0), "╭─╯\r\n");
+        assert_eq!(create_joiner_from_depths(0, 0), "│\r\n");
+        assert_eq!(create_joiner_from_depths(1, 2), "   ╰─╮\r\n");
+        assert_eq!(create_joiner_from_depths(1, 3), "\r\n");
+        assert_eq!(create_joiner_from_depths(1, 3), "\r\n");
     }
 }

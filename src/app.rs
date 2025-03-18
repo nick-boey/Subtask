@@ -61,20 +61,24 @@ impl App {
         task_list.add_new_root_task_at_end("Task 3");
         task_list.add_new_subtask("Task 1.1", 0);
     }
+
+    fn instructions(&self) -> Line {
+        let instructions = Line::from(vec![
+            " ? ".into(),
+            "<Help> ".green().bold(),
+            " q ".into(),
+            "<Quit> ".red().bold(),
+        ]);
+        instructions
+    }
 }
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(" Subtask ".bold());
-        let instructions = Line::from(vec![
-            " h ".into(),
-            "<Left> ".blue().bold(),
-            " l ".into(),
-            "<Right> ".blue().bold(),
-        ]);
         let block = Block::bordered()
-            .title(title.centered())
-            .title_bottom(instructions.centered())
+            .title(title)
+            .title_bottom(self.instructions().right_aligned())
             .border_set(border::ROUNDED);
 
         match &self.task_list {

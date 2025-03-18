@@ -113,7 +113,7 @@ impl PartialEq for Task {
 
 impl Render for Task {
     fn render(&self) -> String {
-        let space = " ".repeat(self.depth as usize * 3);
+        let space = " ".repeat(self.depth as usize * 2);
         let symbol = match self.task_status {
             TaskStatus::NotStarted => "○",
             TaskStatus::InProgress(_) => "○",
