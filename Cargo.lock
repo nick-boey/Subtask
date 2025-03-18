@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "Subchain"
+name = "Subtask"
 version = "0.0.1"
 dependencies = [
  "chrono",

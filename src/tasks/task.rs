@@ -111,6 +111,22 @@ impl PartialEq for Task {
     }
 }
 
+impl Render for Task {
+    fn render(&self) -> String {
+        let space = " ".repeat(self.depth as usize * 3);
+        let symbol = match self.task_status {
+            TaskStatus::NotStarted => "○",
+            TaskStatus::InProgress(_) => "○",
+            TaskStatus::Complete(_) => "●",
+        };
+        format!("{}{} {}\r\n", space, symbol, self.title)
+    }
+}
+
+pub(crate) trait Render {
+    fn render(&self) -> String;
+}
+
 #[cfg(test)]
 mod test {
     #[test]

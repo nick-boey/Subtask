@@ -1,5 +1,5 @@
 [package]
-name = "Subchain"
+name = "Subtask"
 version = "0.0.1"
 edition = "2021"
 authors = ["Nick Boey <nick-boey@users.noreply.github.com>"]

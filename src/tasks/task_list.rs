@@ -1,4 +1,5 @@
-﻿use crate::tasks::task::{ExecutionOrder, Task};
+﻿use crate::tasks::task::{ExecutionOrder, Render, Task};
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 pub enum TaskListError {
@@ -14,6 +15,7 @@ pub enum Direction {
 }
 
 /// A list of tasks, acting as a container for the tasks held.
+#[derive(Debug)]
 pub struct TaskList {
     /// The name of the task list
     name: String,
@@ -309,6 +311,52 @@ impl TaskList {
                 result.push('>');
             }
             result.push_str(&format!("{}\r\n", task.title));
+        }
+        result
+    }
+}
+
+impl Render for TaskList {
+    fn render(&self) -> String {
+        let mut result: String = String::new();
+        let mut prev_task: Option<&Task> = None;
+        for task in self.tasks.iter() {
+            // Render a joiner between the tasks
+            if let Some(prev_task) = prev_task {
+                match task.depth.cmp(&prev_task.depth) {
+                    Ordering::Less => {
+                        // Push a ╰─╮ joiner
+                        result.push_str(" ".repeat(prev_task.depth as usize).as_str());
+                        result.push('╰');
+                        result.push_str(
+                            "─"
+                                .repeat((task.depth - prev_task.depth - 2) as usize)
+                                .as_str(),
+                        );
+                        result.push_str("╮\r\n");
+                    }
+                    Ordering::Equal => {
+                        // Push a │ joiner
+                        result.push_str(" ".repeat(prev_task.depth as usize).as_str());
+                        result.push_str("│\r\n");
+                    }
+                    Ordering::Greater => {
+                        // Push a ╭─╯ joiner
+                        result.push_str(" ".repeat(prev_task.depth as usize).as_str());
+                        result.push('╭');
+                        result.push_str(
+                            "─"
+                                .repeat((task.depth - prev_task.depth - 2) as usize)
+                                .as_str(),
+                        );
+                        result.push_str("╯\r\n");
+                    }
+                }
+            };
+            dbg!(&result);
+            // Add the task and reset the previous task reference
+            result.push_str(&task.render());
+            prev_task = Some(task);
         }
         result
     }
