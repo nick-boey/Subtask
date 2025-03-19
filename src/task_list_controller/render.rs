@@ -1,6 +1,8 @@
-﻿use crate::task::{render::TaskState, Task};
-use crate::task_list::{Direction, TaskList};
-use crate::ui::joiner;
+﻿use crate::task_list_controller::TaskListController;
+use crate::{
+    task::render::TaskState, task_list::state::TaskListState, task_list::Direction, ui::joiner,
+};
+use ratatui::widgets::Widget;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -8,20 +10,21 @@ use ratatui::{
 };
 use std::cmp::min;
 
-impl StatefulWidget for &TaskList {
-    type State = TaskListState;
-
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let num_tasks = min(area.height, self.tasks.len() as u16);
+impl Widget for &TaskListController {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let task_list = &self.task_list;
+        let num_tasks = min(area.height, task_list.tasks.len() as u16);
         let mut y: u16 = area.y;
 
-        for (pos, task) in self.tasks.iter().enumerate() {
+        for (pos, task) in task_list.tasks.iter().enumerate() {
             // Create a joiner for every task except the first
             if pos != 0 {
-                let joiner =
-                    joiner::Joiner::create(self.neighbour_depth(pos, &Direction::Up), task.depth);
+                let joiner = joiner::Joiner::create(
+                    task_list.neighbour_depth(pos, &Direction::Up),
+                    task.depth,
+                );
                 if let Some(joiner) = joiner {
-                    let depth = min(self.neighbour_depth(pos, &Direction::Up), task.depth);
+                    let depth = min(task_list.neighbour_depth(pos, &Direction::Up), task.depth);
                     buf.set_line(
                         (depth * 2) as u16 + area.x,
                         y,
@@ -41,7 +44,7 @@ impl StatefulWidget for &TaskList {
             );
 
             let mut task_state = TaskState::default();
-            if state.selected_pos == pos {
+            if self.task_list_state.selected_pos == pos {
                 task_state.selected = true;
             }
 
@@ -52,19 +55,5 @@ impl StatefulWidget for &TaskList {
                 break;
             }
         }
-    }
-}
-
-/// Contains the application state of the list.
-#[derive(Debug, Default, Clone)]
-pub struct TaskListState {
-    /// The position of the currently selected task in the list.
-    pub(crate) selected_pos: usize,
-}
-
-impl TaskListState {
-    /// Creates a default TaskListState
-    pub fn default() -> TaskListState {
-        TaskListState { selected_pos: 0 }
     }
 }

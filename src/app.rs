@@ -1,8 +1,10 @@
-use crate::{task_list::render::TaskListState, task_list::TaskList};
+use crate::task_list_controller::TaskListController;
+use crate::{task_list::state::TaskListState, task_list::TaskList};
 
-mod actions;
+mod events;
 mod render;
 
+use crossterm::event::KeyEvent;
 use ratatui::{
     style::Stylize,
     widgets::{StatefulWidget, Widget},
@@ -19,8 +21,7 @@ enum AppMode {
 
 #[derive(Debug, Default)]
 pub struct App {
-    task_list: Option<TaskList>,
-    task_list_state: TaskListState,
+    task_list_controller: TaskListController,
     task_detail_visible: bool,
     help_visible: bool,
     mode: AppMode,
@@ -35,4 +36,7 @@ impl App {
         }
         Ok(())
     }
+}
+pub(crate) trait KeyEventHandler {
+    fn handle_key_event(&mut self, key_event: KeyEvent);
 }

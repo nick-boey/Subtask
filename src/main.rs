@@ -5,6 +5,7 @@ mod app;
 mod task;
 mod task_list;
 mod ui;
+mod task_list_controller;
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();

@@ -26,18 +26,7 @@ impl Widget for &App {
         let inner_area = block.inner(area);
         block.render(area, buf);
 
-        // Render task list
-        match &self.task_list {
-            // If a task list is available, render it to the screen in a list
-            Some(task_list) => {
-                task_list.render(inner_area, buf, &mut self.task_list_state.clone());
-            }
-            // Prompt the user to create a new task list
-            None => {
-                let text = Text::from("Press <t> to create a new test task list!");
-                text.render(inner_area, buf);
-            }
-        }
+        self.task_list_controller.render(inner_area, buf);
 
         // Render help overlay
         if self.help_visible {

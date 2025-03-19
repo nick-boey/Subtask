@@ -1,7 +1,7 @@
 ﻿mod actions;
 mod error;
 pub mod index;
-pub mod render;
+pub(crate) mod state;
 
 use crate::task::{ExecutionOrder, Task};
 use std::collections::HashMap;
@@ -19,7 +19,7 @@ pub enum Direction {
 }
 
 /// A list of tasks, acting as a container for the tasks held.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TaskList {
     /// The name of the task list
     name: String,
@@ -235,5 +235,4 @@ mod tests {
 
         assert_eq!(setup_task_list().print_debug(), expected);
     }
-
 }
