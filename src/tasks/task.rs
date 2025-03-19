@@ -1,4 +1,9 @@
 ﻿use chrono::{DateTime, Local};
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::style::Stylize;
+use ratatui::text::{Line, Span, Text};
+use ratatui::widgets::StatefulWidget;
 use std::cmp::PartialEq;
 use uuid::Uuid;
 
@@ -65,9 +70,18 @@ impl Task {
         }
     }
 
-    /// Set the task status to a value.
-    fn task_status(&mut self, status: TaskStatus) {
-        self.task_status = status;
+    pub(crate) fn toggle_status(&mut self) {
+        match self.task_status {
+            TaskStatus::NotStarted => {
+                self.task_status = TaskStatus::InProgress(Local::now());
+            }
+            TaskStatus::InProgress(_) => {
+                self.task_status = TaskStatus::Complete(Local::now());
+            }
+            TaskStatus::Complete(_) => {
+                self.task_status = TaskStatus::NotStarted;
+            }
+        }
     }
 
     /// Set the execution order to a new value.
@@ -111,20 +125,44 @@ impl PartialEq for Task {
     }
 }
 
-impl Render for Task {
-    fn render(&self) -> String {
-        let space = " ".repeat(self.depth as usize * 2);
+impl StatefulWidget for &Task {
+    type State = TaskState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let symbol = match self.task_status {
             TaskStatus::NotStarted => "○",
             TaskStatus::InProgress(_) => "○",
             TaskStatus::Complete(_) => "●",
         };
-        format!("{}{} {}\r\n", space, symbol, self.title)
+        let mut line = Line::from(format!("{} {}\r\n", symbol, self.title));
+        if state.selected {
+            line = line.underlined();
+        }
+        match self.task_status {
+            TaskStatus::NotStarted => {}
+            TaskStatus::InProgress(_) => {
+                line = line.yellow().bold();
+            }
+            TaskStatus::Complete(_) => {
+                line = line.green().italic();
+            }
+        }
+        buf.set_line(area.x, area.y, &line, area.width);
     }
 }
 
-pub(crate) trait Render {
-    fn render(&self) -> String;
+pub struct TaskState {
+    pub(crate) selected: bool,
+    visible: bool,
+}
+
+impl TaskState {
+    pub fn default() -> TaskState {
+        TaskState {
+            selected: false,
+            visible: true,
+        }
+    }
 }
 
 #[cfg(test)]

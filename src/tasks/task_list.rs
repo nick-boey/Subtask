@@ -1,4 +1,9 @@
-﻿use crate::tasks::task::{ExecutionOrder, Render, Task};
+﻿use crate::tasks::task::{ExecutionOrder, Task, TaskState};
+use crate::ui;
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::text::Line;
+use ratatui::widgets::StatefulWidget;
 use std::cmp::{min, Ordering};
 use std::collections::HashMap;
 
@@ -76,6 +81,14 @@ impl TaskList {
         Ok(&self.tasks[pos])
     }
 
+    fn get_mut_task(&mut self, pos: usize) -> Result<&mut Task, TaskListError> {
+        if pos >= self.len() {
+            return Err(TaskListError::TaskOutOfBoundsError);
+        }
+
+        Ok(&mut self.tasks[pos])
+    }
+
     /// Gets the depth of a neighbouring task relative to the provided position.
     /// Return 0 if the task list is empty and returns the same depth as the task if the task is
     /// at the end of the list.
@@ -117,6 +130,14 @@ impl TaskList {
         self.tasks.insert(task_pos + 1, task);
         self.rebuild_all_indices();
         self
+    }
+
+    pub fn toggle_task_status(&mut self, pos: usize) {
+        let Ok(task) = self.get_mut_task(pos) else{
+            return;
+        };
+        
+        task.toggle_status();
     }
 
     /// Moves a subtask up or down in the list
@@ -316,60 +337,64 @@ impl TaskList {
     }
 }
 
-/// Renders a joiner between two tasks provided their depths.
-/// Doesn't render joiners longer than three characters.
-fn create_joiner_from_depths(depth_above: i8, depth_below: i8) -> String {
-    let mut result: String = String::new();
-    let depth_diff = depth_below - depth_above;
+impl StatefulWidget for &TaskList {
+    type State = TaskListState;
 
-    if !(-1..=1).contains(&depth_diff) {
-        return "\r\n".to_string();
-    }
-
-    result.push_str(
-        " ".repeat(min(depth_above as usize, depth_below as usize) * 2)
-            .as_str(),
-    );
-    match depth_diff {
-        1 => {
-            // Create a ╰─╮ joiner
-            result.push_str("╰─╮\r\n");
-        }
-        0 => {
-            // Create a │ joiner
-            result.push_str(" ".repeat((depth_above * 2) as usize).as_str());
-            result.push_str("│\r\n");
-        }
-        -1 => {
-            // Create a ╭─╯ joiner
-            result.push_str(" ".repeat((depth_below * 2) as usize).as_str());
-            result.push_str("╭─╯\r\n");
-        }
-        _ => {
-            return "\r\n".to_string();
-        }
-    }
-
-    result
-}
-
-impl Render for TaskList {
-    /// Renders the task list to a string
-    fn render(&self) -> String {
-        let mut result: String = String::new();
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let num_tasks = min(area.height, self.tasks.len() as u16);
+        let mut y: u16 = area.y;
 
         for (pos, task) in self.tasks.iter().enumerate() {
             // Create a joiner for every task except the first
             if pos != 0 {
-                result.push_str(&create_joiner_from_depths(
-                    self.neighbour_depth(pos, &Direction::Up),
-                    task.depth,
-                ));
+                let joiner =
+                    ui::Joiner::create(self.neighbour_depth(pos, &Direction::Up), task.depth);
+                if let Some(joiner) = joiner {
+                    let depth = min(self.neighbour_depth(pos, &Direction::Up), task.depth);
+                    buf.set_line(
+                        (depth * 2) as u16 + area.x,
+                        y,
+                        &Line::from(joiner),
+                        area.width,
+                    );
+                };
+                y += 1;
             }
-            // Render the task
-            result.push_str(&task.render());
+
+            // Create the area that the task will be rendered in and render the task
+            let task_area = Rect::new(
+                (task.depth * 2) as u16 + area.x,
+                y,
+                area.width - task.depth as u16 * 2,
+                1,
+            );
+
+            let mut task_state = TaskState::default();
+            if state.selected_pos == pos {
+                task_state.selected = true;
+            }
+
+            task.render(task_area, buf, &mut task_state);
+
+            y += 1;
+            if y - area.y >= num_tasks * 2 {
+                break;
+            }
         }
-        result
+    }
+}
+
+/// Contains the application state of the list.
+#[derive(Debug, Default, Clone)]
+pub struct TaskListState {
+    /// The position of the currently selected task in the list.
+    pub(crate) selected_pos: usize,
+}
+
+impl TaskListState {
+    /// Creates a default TaskListState
+    pub fn default() -> TaskListState {
+        TaskListState { selected_pos: 0 }
     }
 }
 
@@ -418,15 +443,5 @@ mod tests {
         let expected = "Task 0\r\nTask 1\r\n>Task 1.1\r\n>Task 1.2\r\n>Task 4\r\n>Task 1.3\r\nTask 2\r\n>Task 2.1\r\n>Task 2.2\r\n>Task 2.3\r\nTask 3\r\n";
 
         assert_eq!(task_list.print_debug(), expected);
-    }
-
-    #[test]
-    fn create_joiner_at_depths_correct_joiner() {
-        assert_eq!(create_joiner_from_depths(0, 1), "╰─╮\r\n");
-        assert_eq!(create_joiner_from_depths(1, 0), "╭─╯\r\n");
-        assert_eq!(create_joiner_from_depths(0, 0), "│\r\n");
-        assert_eq!(create_joiner_from_depths(1, 2), "   ╰─╮\r\n");
-        assert_eq!(create_joiner_from_depths(1, 3), "\r\n");
-        assert_eq!(create_joiner_from_depths(1, 3), "\r\n");
     }
 }

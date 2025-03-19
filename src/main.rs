@@ -6,6 +6,7 @@ use std::io;
 mod app;
 mod tasks;
 mod ui;
+mod help;
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
