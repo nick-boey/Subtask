@@ -2,8 +2,8 @@ use crate::app::App;
 use std::io;
 
 mod app;
-mod help;
-mod tasks;
+mod task;
+mod task_list;
 mod ui;
 
 fn main() -> io::Result<()> {

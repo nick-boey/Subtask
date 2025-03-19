@@ -1,13 +1,8 @@
 ﻿use chrono::{DateTime, Local};
-use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    style::Stylize,
-    text::Line,
-    widgets::StatefulWidget,
-};
 use std::cmp::PartialEq;
 use uuid::Uuid;
+
+pub mod render;
 
 #[derive(Debug, Clone)]
 pub enum TaskStatus {
@@ -124,46 +119,6 @@ impl Task {
 impl PartialEq for Task {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
-    }
-}
-
-impl StatefulWidget for &Task {
-    type State = TaskState;
-
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let symbol = match self.task_status {
-            TaskStatus::NotStarted => "○",
-            TaskStatus::InProgress(_) => "○",
-            TaskStatus::Complete(_) => "●",
-        };
-        let mut line = Line::from(format!("{} {}\r\n", symbol, self.title));
-        if state.selected {
-            line = line.underlined();
-        }
-        match self.task_status {
-            TaskStatus::NotStarted => {}
-            TaskStatus::InProgress(_) => {
-                line = line.yellow().bold();
-            }
-            TaskStatus::Complete(_) => {
-                line = line.green().italic();
-            }
-        }
-        buf.set_line(area.x, area.y, &line, area.width);
-    }
-}
-
-pub struct TaskState {
-    pub(crate) selected: bool,
-    visible: bool,
-}
-
-impl TaskState {
-    pub fn default() -> TaskState {
-        TaskState {
-            selected: false,
-            visible: true,
-        }
     }
 }
 

@@ -1,5 +1,11 @@
 # User interface for Subtask
 
+## Todo list
+
+1. Add and delete tasks
+2. Navigate using depths
+3. Folding tasks
+
 ## Keybindings
 
 - `h` - Go to parent task
