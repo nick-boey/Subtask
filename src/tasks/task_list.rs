@@ -1,10 +1,7 @@
 ﻿use crate::tasks::task::{ExecutionOrder, Task, TaskState};
 use crate::ui;
-use ratatui::buffer::Buffer;
-use ratatui::layout::Rect;
-use ratatui::text::Line;
-use ratatui::widgets::StatefulWidget;
-use std::cmp::{min, Ordering};
+use ratatui::{buffer::Buffer, layout::Rect, text::Line, widgets::StatefulWidget};
+use std::cmp::min;
 use std::collections::HashMap;
 
 pub enum TaskListError {
@@ -133,10 +130,10 @@ impl TaskList {
     }
 
     pub fn toggle_task_status(&mut self, pos: usize) {
-        let Ok(task) = self.get_mut_task(pos) else{
+        let Ok(task) = self.get_mut_task(pos) else {
             return;
         };
-        
+
         task.toggle_status();
     }
 

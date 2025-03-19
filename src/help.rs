@@ -1,9 +1,11 @@
-﻿use ratatui::buffer::Buffer;
-use ratatui::layout::Rect;
-use ratatui::style::Stylize;
-use ratatui::symbols::border;
-use ratatui::text::Line;
-use ratatui::widgets::{Block, Clear, Paragraph, Widget};
+﻿use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
+    style::Stylize,
+    symbols::border,
+    text::Line,
+    widgets::{Block, Clear, Paragraph, Widget},
+};
 use std::collections::HashMap;
 
 /// Renders the help menu into the given buffer.

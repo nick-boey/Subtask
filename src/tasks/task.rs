@@ -1,9 +1,11 @@
 ﻿use chrono::{DateTime, Local};
-use ratatui::buffer::Buffer;
-use ratatui::layout::Rect;
-use ratatui::style::Stylize;
-use ratatui::text::{Line, Span, Text};
-use ratatui::widgets::StatefulWidget;
+use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
+    style::Stylize,
+    text::Line,
+    widgets::StatefulWidget,
+};
 use std::cmp::PartialEq;
 use uuid::Uuid;
 

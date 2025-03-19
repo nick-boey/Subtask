@@ -1,16 +1,12 @@
-use crate::help;
-use crate::tasks::task_list::TaskList;
-use crate::tasks::task_list::TaskListState;
+use crate::{help, tasks::task_list::TaskList, tasks::task_list::TaskListState};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use ratatui::layout::{Constraint, Flex, Layout};
-use ratatui::prelude::StatefulWidget;
 use ratatui::{
     buffer::Buffer,
-    layout::Rect,
+    layout::{Constraint, Flex, Layout, Rect},
     style::Stylize,
     symbols::border,
     text::{Line, Text},
-    widgets::{Block, Paragraph, Widget},
+    widgets::{Block, StatefulWidget, Widget},
     DefaultTerminal, Frame,
 };
 use std::io;
