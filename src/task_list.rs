@@ -1,7 +1,6 @@
 ﻿mod actions;
 mod error;
 pub mod index;
-pub(crate) mod state;
 
 use crate::task::{ExecutionOrder, Task};
 use std::collections::HashMap;
@@ -72,7 +71,7 @@ impl TaskList {
     }
 
     /// Gets a task from the list at a specific position.
-    fn get_task(&self, pos: usize) -> Result<&Task, TaskListError> {
+    pub(crate) fn get_task(&self, pos: usize) -> Result<&Task, TaskListError> {
         if pos >= self.len() {
             return Err(TaskListError::TaskOutOfBoundsError);
         }

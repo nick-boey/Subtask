@@ -29,28 +29,18 @@ Tasks: ○ = not done
 
 ## Tasks
 
-### Serial tasks
+### Serial and parallel tasks
 
 ```
-○ Parent task
-╰─╮
-  ◉ Serial subtask 1
-  │ 
-  ○ Serial subtask 2
-╭─╯
-○ Parent task
-```
-
-### Parallel tasks
-
-```
-○ Task
-│
-├─○ Task
-│  
-╰─○ Task
-
-○ Task
+○╮ Parent task
+│╰─○ Serial subtask
+│  ○ Serial subtask
+○╮ Root task
+│├─○ Parallel subtask
+│╰─○╮ Parallel subtask
+│   ╰─○ Serial subtask
+│     ○ Serial subtask  
+○  Root task 
 ```
 
 ## Actions

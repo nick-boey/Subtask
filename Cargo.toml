@@ -10,7 +10,8 @@ chrono = "0.4.38"
 ratatui = "0.29.0"
 color-eyre = "0.6.3"
 crossterm = "0.28.1"
+tui-input = "*"
 
 [dependencies.uuid]
-version = "1.15.1"
+version = "1.11.0"
 features = ["v4"]

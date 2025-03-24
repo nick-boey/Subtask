@@ -1,6 +1,4 @@
 use crate::task_list_controller::TaskListController;
-use crate::{task_list::state::TaskListState, task_list::TaskList};
-
 mod events;
 mod render;
 
@@ -11,7 +9,6 @@ use ratatui::{
     DefaultTerminal,
 };
 use std::io;
-
 #[derive(Debug, Clone, Copy, Default)]
 enum AppMode {
     #[default]

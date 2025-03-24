@@ -35,7 +35,7 @@ impl TaskList {
     }
 
     /// Delete a task from the task list. Deletes all the subtasks as well.
-    fn delete_task(&mut self, pos: usize) -> &mut Self {
+    pub fn delete_task(&mut self, pos: usize) -> &mut Self {
         // Check that a task exists at the position.
         if pos >= self.len() {
             return self;
@@ -80,7 +80,7 @@ impl TaskList {
 
     /// Demote a task by making it a child of the task above it.
     /// If the task above it is a subtask, make it a sibling of that subtask.
-    fn demote_task(&mut self, pos: usize) -> &mut Self {
+    pub fn demote_task(&mut self, pos: usize) -> &mut Self {
         self.change_task_depth(pos, 1)
     }
 
@@ -91,10 +91,12 @@ impl TaskList {
         };
 
         // Make sure that the depth does not go below 0
-        if task.depth > depth_change {
-            task.depth += depth_change
+        if depth_change.is_negative() && task.depth < -depth_change {
+            return self;
         }
 
+        // Move the task
+        task.depth += depth_change;
         self
     }
 }
