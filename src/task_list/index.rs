@@ -40,42 +40,42 @@ impl TaskList {
         };
 
         for &task in root_tasks {
-            let mut active_subtasks = self.get_active_subtasks(task);
+            let mut active_subtasks = self.get_next_subtasks(task);
             self.next_tasks.append(&mut active_subtasks);
         }
 
         self
     }
 
-    /// Gets all the active subtasks of the current position
-    fn get_active_subtasks(&self, pos: usize) -> Vec<usize> {
-        let mut active_subtasks: Vec<usize> = vec![];
+    /// Gets all the next subtasks of the current position
+    fn get_next_subtasks(&self, pos: usize) -> Vec<usize> {
+        let mut next_subtasks: Vec<usize> = vec![];
         let Ok(task) = self.get_task(pos) else {
-            return active_subtasks;
+            return next_subtasks;
         };
 
-        active_subtasks.push(pos);
+        next_subtasks.push(pos);
 
         if !self.has_subtasks(pos) {
-            return active_subtasks;
+            return next_subtasks;
         }
 
         // Get the direct subtasks of this task
         let subtasks = self.get_direct_subtasks(pos);
         match task.execution_order {
-            // If in series, just add the subtasks of the first task to the active tasks
+            // If in series, just add the subtasks of the first task to the next tasks
             ExecutionOrder::Series => {
                 if let Some(first_subtask) = subtasks.first() {
-                    active_subtasks.append(&mut self.get_active_subtasks(*first_subtask));
+                    next_subtasks.append(&mut self.get_next_subtasks(*first_subtask));
                 }
             }
-            // If in parallel, add all the subtasks of the first task to the active tasks
+            // If in parallel, add all the subtasks of the first task to the next tasks
             ExecutionOrder::Parallel => {
                 for subtask in subtasks {
-                    active_subtasks.append(&mut self.get_active_subtasks(subtask));
+                    next_subtasks.append(&mut self.get_next_subtasks(subtask));
                 }
             }
         }
-        active_subtasks
+        next_subtasks
     }
 }

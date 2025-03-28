@@ -321,13 +321,13 @@ mod tests {
     }
 
     #[test]
-    fn get_active_subtasks_series() {
+    fn get_next_subtasks_series() {
         let task_list = setup_task_list();
         assert_eq!(task_list.next_tasks, vec![0, 1, 4, 5, 8]);
     }
 
     #[test]
-    fn get_active_subtasks_parallel() {
+    fn get_next_subtasks_parallel() {
         let mut task_list = setup_task_list();
         task_list.toggle_execution_order(0);
         assert_eq!(task_list.next_tasks, vec![0, 1, 2, 3, 4, 5, 8]);
