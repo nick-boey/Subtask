@@ -15,7 +15,8 @@ impl KeyEventHandler for TaskListController {
                 KeyCode::BackTab => self.promote_task(),
                 KeyCode::Char(' ') => self.toggle_task_status(),
                 KeyCode::Char('d') => self.delete_task(),
-                KeyCode::Char('t') => self.test(),
+                KeyCode::Char('t') => self.toggle_execution_order(),
+                KeyCode::Char('T') => self.test(),
                 _ => {}
             },
             TaskListMode::New(_) => match key_event.code {
@@ -73,8 +74,12 @@ impl TaskListController {
     }
 
     fn toggle_task_status(&mut self) {
-        let task_list = &mut self.task_list;
-        task_list.toggle_task_status(self.state.selected_pos);
+        self.task_list.toggle_task_status(self.state.selected_pos);
+    }
+
+    fn toggle_execution_order(&mut self) {
+        self.task_list
+            .toggle_execution_order(self.state.selected_pos);
     }
 
     fn delete_task(&mut self) {

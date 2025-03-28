@@ -1,4 +1,5 @@
-﻿use crate::task::Task;
+﻿use crate::task::ExecutionOrder::{Parallel, Series};
+use crate::task::Task;
 use crate::task_list::{Direction, TaskList, TaskListError};
 
 impl TaskList {
@@ -45,6 +46,8 @@ impl TaskList {
         for i in (pos..=end).rev() {
             self.tasks.remove(i);
         }
+
+        self.rebuild_all_indices();
         self
     }
 
@@ -97,6 +100,22 @@ impl TaskList {
 
         // Move the task
         task.depth += depth_change;
+
+        self.rebuild_all_indices();
+        self
+    }
+
+    pub(crate) fn toggle_execution_order(&mut self, pos: usize) -> &mut Self {
+        let Ok(task) = self.get_mut_task(pos) else {
+            return self;
+        };
+
+        task.execution_order = match task.execution_order {
+            Series => Parallel,
+            Parallel => Series,
+        };
+
+        self.rebuild_next_tasks();
         self
     }
 }
@@ -122,5 +141,15 @@ mod test {
         let expected = "Task 0\r\nTask 1\r\n>Task 1.1\r\n>Task 1.2\r\n>Task 4\r\n>Task 1.3\r\nTask 2\r\n>Task 2.1\r\n>Task 2.2\r\n>Task 2.3\r\nTask 3\r\n";
 
         assert_eq!(task_list.print_debug(), expected);
+    }
+
+    #[test]
+    fn toggle_execution_order() {
+        let mut task_list = crate::task_list::tests::setup_task_list();
+        task_list.toggle_execution_order(3);
+        assert_eq!(
+            task_list.get_task(3).unwrap().execution_order,
+            crate::task::ExecutionOrder::Parallel
+        );
     }
 }

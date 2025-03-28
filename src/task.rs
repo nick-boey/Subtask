@@ -11,7 +11,7 @@ pub enum TaskStatus {
     Complete(DateTime<Local>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExecutionOrder {
     Series,
     Parallel,
@@ -34,10 +34,8 @@ pub struct Task {
     pub task_status: TaskStatus,
     /// The order in which the subtasks should be executed. Defaults to Series.
     pub execution_order: ExecutionOrder,
-
     /// The depth at which the task is currently sitting. Used to determine the subtasks.
     pub depth: i8,
-
     /// The automatically created creation date.
     pub creation_date: DateTime<Local>,
     /// An optional start date for the task.
@@ -61,7 +59,7 @@ impl Task {
             start_date: None,
             due_date: None,
             task_status: TaskStatus::NotStarted,
-            execution_order: ExecutionOrder::Parallel,
+            execution_order: ExecutionOrder::Series,
             expected_duration: None,
             depth,
         }
@@ -82,7 +80,7 @@ impl Task {
     }
 
     /// Set the execution order to a new value.
-    fn execution_order(&mut self, order: ExecutionOrder) {
+    pub(crate) fn execution_order(&mut self, order: ExecutionOrder) {
         self.execution_order = order;
     }
 

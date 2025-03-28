@@ -1,4 +1,4 @@
-﻿use crate::task::{Task, TaskStatus};
+﻿use crate::task::{ExecutionOrder, Task, TaskStatus};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -26,6 +26,10 @@ impl StatefulWidget for &Task {
             line = line.underlined();
         }
 
+        if !state.next {
+            line = line.dark_gray();
+        }
+
         match self.task_status {
             TaskStatus::NotStarted => {}
             TaskStatus::InProgress(_) => {
@@ -44,9 +48,11 @@ pub struct TaskState {
     /// True if the task is currently selected.
     pub selected: bool,
     /// True if the task is currently visible.
-    visible: bool,
+    pub visible: bool,
     /// True if the task is a leaf task false if it is a branch task
     pub leaf: bool,
+    /// True if the task is a candidate to be completed next
+    pub next: bool,
 }
 
 impl TaskState {
@@ -55,6 +61,7 @@ impl TaskState {
             selected: false,
             visible: true,
             leaf: false,
+            next: false,
         }
     }
 }

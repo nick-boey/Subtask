@@ -24,6 +24,9 @@ impl Widget for &TaskListController {
 
             // Create a state for each rendered task based on the current state
             let mut task_state = TaskState::default();
+            if task_list.next_tasks.contains(&pos) {
+                task_state.next = true;
+            }
             // A task is only a leaf task if the task below it is at the same or lower depth
             if task_list.neighbour_depth(pos, &Direction::Down) <= task.depth {
                 task_state.leaf = true;

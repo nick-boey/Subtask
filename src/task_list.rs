@@ -5,6 +5,7 @@ pub mod index;
 use crate::task::{ExecutionOrder, Task};
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub enum TaskListError {
     TaskOutOfBoundsError,
     TaskNotFoundError,
@@ -25,11 +26,11 @@ pub struct TaskList {
     /// The primary linear collection of tasks
     pub(crate) tasks: Vec<Task>,
     /// An index of all the tasks
-    title_index: HashMap<String, usize>,
+    pub(crate) title_index: HashMap<String, usize>,
     /// An index of all the tasks at a specific depth
-    depth_index: HashMap<i8, Vec<usize>>,
+    pub(crate) depth_index: HashMap<i8, Vec<usize>>,
     /// An index of all the tasks that are up next
-    next_tasks: Vec<usize>,
+    pub(crate) next_tasks: Vec<usize>,
 }
 
 impl TaskList {
@@ -176,7 +177,20 @@ impl TaskList {
 
     /// Gets the parent of a task at the specified position
     pub(crate) fn get_parent(&self, pos: usize) -> Option<usize> {
-        todo!();
+        // Get the depth of the task, then look for the next task up at a depth one less than the current task.
+        let Ok(task) = self.get_task(pos) else {
+            return None;
+        };
+        let depth = task.depth;
+        if depth == 0 {
+            return None;
+        };
+
+        let depth_tasks = self.depth_index.get(&(depth - 1))?;
+        let partition_point = depth_tasks.partition_point(|&p| p < pos);
+
+        // Partition the tasks in the depth index above the current, then use this to find the nearest parent.
+        Some(depth_tasks[depth_tasks.partition_point(|p| p < &pos) - 1])
     }
 
     /// Calculate the total duration of the task and its subtasks depending on their execution order.
@@ -274,15 +288,15 @@ mod tests {
     #[test]
     fn has_subtasks_is_accurate() {
         let task_list = setup_task_list();
-        assert_eq!(task_list.has_subtasks(0), true);
-        assert_eq!(task_list.has_subtasks(1), false);
-        assert_eq!(task_list.has_subtasks(2), false);
-        assert_eq!(task_list.has_subtasks(3), false);
-        assert_eq!(task_list.has_subtasks(4), true);
-        assert_eq!(task_list.has_subtasks(5), false);
-        assert_eq!(task_list.has_subtasks(6), false);
-        assert_eq!(task_list.has_subtasks(7), false);
-        assert_eq!(task_list.has_subtasks(8), false);
+        assert!(task_list.has_subtasks(0));
+        assert!(!task_list.has_subtasks(1));
+        assert!(!task_list.has_subtasks(2));
+        assert!(!task_list.has_subtasks(3));
+        assert!(task_list.has_subtasks(4));
+        assert!(!task_list.has_subtasks(5));
+        assert!(!task_list.has_subtasks(6));
+        assert!(!task_list.has_subtasks(7));
+        assert!(!task_list.has_subtasks(8));
     }
 
     #[test]
@@ -290,5 +304,34 @@ mod tests {
         let task_list = setup_task_list();
         let last_subtask_pos = task_list.get_last_subtask_pos(0);
         assert_eq!(last_subtask_pos, 3);
+    }
+
+    #[test]
+    fn get_parent_gives_correct_pos() {
+        let task_list = setup_task_list();
+        assert_eq!(task_list.get_parent(0), None);
+        assert_eq!(task_list.get_parent(1), Some(0));
+        assert_eq!(task_list.get_parent(2), Some(0));
+        assert_eq!(task_list.get_parent(3), Some(0));
+        assert_eq!(task_list.get_parent(4), None);
+        assert_eq!(task_list.get_parent(5), Some(4));
+        assert_eq!(task_list.get_parent(6), Some(4));
+        assert_eq!(task_list.get_parent(7), Some(4));
+        assert_eq!(task_list.get_parent(8), None);
+    }
+
+    #[test]
+    fn get_active_subtasks_series() {
+        let task_list = setup_task_list();
+        assert_eq!(task_list.next_tasks, vec![0, 1, 4, 5, 8]);
+    }
+
+    #[test]
+    fn get_active_subtasks_parallel() {
+        let mut task_list = setup_task_list();
+        task_list.toggle_execution_order(0);
+        assert_eq!(task_list.next_tasks, vec![0, 1, 2, 3, 4, 5, 8]);
+        task_list.toggle_execution_order(4);
+        assert_eq!(task_list.next_tasks, vec![0, 1, 2, 3, 4, 5, 6, 7, 8]);
     }
 }
