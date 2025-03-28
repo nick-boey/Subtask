@@ -165,3 +165,11 @@ Results in:
   
 ○ Task
 ```
+
+# Logging
+
+Log path is
+
+```
+C:\Users\<user>\AppData\Local\nick-boey\Subtask\data\Subtask.log
+```

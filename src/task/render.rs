@@ -15,10 +15,17 @@ impl StatefulWidget for &Task {
             TaskStatus::InProgress(_) => "○",
             TaskStatus::Complete(_) => "●",
         };
-        let mut line = Line::from(format!("{} {}\r\n", symbol, self.title));
+
+        // Add an extra space to the left of the task title if it is a branch task to allow room for the joiner.
+        let mut line = match state.leaf {
+            true => Line::from(format!("{} {}\r\n", symbol, self.title)),
+            false => Line::from(format!("{}  {}\r\n", symbol, self.title)),
+        };
+
         if state.selected {
             line = line.underlined();
         }
+
         match self.task_status {
             TaskStatus::NotStarted => {}
             TaskStatus::InProgress(_) => {
@@ -31,9 +38,15 @@ impl StatefulWidget for &Task {
         buf.set_line(area.x, area.y, &line, area.width);
     }
 }
+
+/// Holds the current state of a task that is being rendered.
 pub struct TaskState {
+    /// True if the task is currently selected.
     pub selected: bool,
+    /// True if the task is currently visible.
     visible: bool,
+    /// True if the task is a leaf task false if it is a branch task
+    pub leaf: bool,
 }
 
 impl TaskState {
@@ -41,6 +54,7 @@ impl TaskState {
         TaskState {
             selected: false,
             visible: true,
+            leaf: false,
         }
     }
 }

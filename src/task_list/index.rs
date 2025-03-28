@@ -29,4 +29,9 @@ impl TaskList {
         }
         self
     }
+    
+    fn rebuild_next_tasks(&mut self) -> &mut Self {
+        todo!();
+        self
+    }
 }

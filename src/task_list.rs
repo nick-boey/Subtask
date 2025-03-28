@@ -28,6 +28,8 @@ pub struct TaskList {
     title_index: HashMap<String, usize>,
     /// An index of all the tasks at a specific depth
     depth_index: HashMap<i8, Vec<usize>>,
+    /// An index of all the tasks that are up next
+    next_tasks: Vec<usize>,
 }
 
 impl TaskList {
@@ -38,6 +40,7 @@ impl TaskList {
             tasks: vec![],
             title_index: HashMap::new(),
             depth_index: HashMap::new(),
+            next_tasks: vec![],
         }
     }
 
@@ -64,7 +67,7 @@ impl TaskList {
 
         if neighbour_pos >= self.tasks.len() {
             // Return the end of the array if the bounds are outside the array
-            return self.tasks.len();
+            return self.tasks.len() - 1;
         }
 
         neighbour_pos
@@ -79,7 +82,8 @@ impl TaskList {
         Ok(&self.tasks[pos])
     }
 
-    fn get_mut_task(&mut self, pos: usize) -> Result<&mut Task, TaskListError> {
+    /// Gets a mutable task from the list at a specific position
+    pub(crate) fn get_mut_task(&mut self, pos: usize) -> Result<&mut Task, TaskListError> {
         if pos >= self.len() {
             return Err(TaskListError::TaskOutOfBoundsError);
         }
@@ -90,7 +94,7 @@ impl TaskList {
     /// Gets the depth of a neighbouring task relative to the provided position.
     /// Return 0 if the task list is empty and returns the same depth as the task if the task is
     /// at the end of the list.
-    pub fn neighbour_depth(&self, pos: usize, dir: &Direction) -> i8 {
+    pub(crate) fn neighbour_depth(&self, pos: usize, dir: &Direction) -> i8 {
         if self.tasks.is_empty() {
             return 0;
         }
@@ -99,7 +103,7 @@ impl TaskList {
     }
 
     /// Check whether a task has any subtasks
-    fn has_subtasks(&self, pos: usize) -> bool {
+    pub(crate) fn has_subtasks(&self, pos: usize) -> bool {
         // Check that the task is not at the end of the list, and that the task below it is not at the same depth or less.
         if pos >= self.len() - 1 {
             return false;
@@ -114,7 +118,7 @@ impl TaskList {
     /// Returns the same index if the task has no subtasks.
     fn get_last_subtask_pos(&self, pos: usize) -> usize {
         // Check that the task is not at the end of the list, and that the task below it is not at the same depth or less.
-        if self.has_subtasks(pos) {
+        if !self.has_subtasks(pos) {
             return pos;
         }
 
@@ -123,7 +127,7 @@ impl TaskList {
         if let Ok(task) = self.get_task(pos) {
             let depth = task.depth;
             // Loop through the depth index backwards
-            for i in depth..=0 {
+            for i in (0..depth + 1).rev() {
                 let Some(depth_tasks) = self.depth_index.get(&i) else {
                     continue;
                 };
@@ -132,7 +136,7 @@ impl TaskList {
                 let end = depth_tasks.iter().find(|&&x| x > pos);
                 if let Some(&end) = end {
                     // If there is an index, return the end position
-                    return end;
+                    return end - 1;
                 }
             }
         }
@@ -141,20 +145,21 @@ impl TaskList {
     }
 
     /// Get all the direct child subtasks of the selected subtask. Returns an empty Vec if there are no subtasks.
-    fn get_direct_subtasks(&self, pos: usize) -> Vec<usize> {
+    pub(crate) fn get_direct_subtasks(&self, pos: usize) -> Vec<usize> {
         // Check that the task is not at the end of the list, and that the task below it is not at the same depth or less.
-        if self.has_subtasks(pos) {
+        if !self.has_subtasks(pos) {
             return vec![];
         }
 
-        // To get the direct subtasks, get the entire size of the subtask list, the look for subtasks in the
+        // To get the direct subtasks, get the entire size of the subtask list, then look for subtasks in the
         // depth index at a depth one greater than the current subtask and within the range of the subtasks.
         let subtask_end = self.get_last_subtask_pos(pos);
+
         let Ok(task) = self.get_task(pos) else {
             return vec![];
         };
-
         let depth = task.depth;
+
         let Some(subtask_depth_tasks) = self.depth_index.get(&(depth + 1)) else {
             return vec![];
         };
@@ -167,6 +172,11 @@ impl TaskList {
             .collect();
 
         subtasks
+    }
+
+    /// Gets the parent of a task at the specified position
+    pub(crate) fn get_parent(&self, pos: usize) -> Option<usize> {
+        todo!();
     }
 
     /// Calculate the total duration of the task and its subtasks depending on their execution order.
@@ -233,5 +243,52 @@ mod tests {
         let expected = "Task 1\r\n>Task 1.1\r\n>Task 1.2\r\n>Task 1.3\r\nTask 2\r\n>Task 2.1\r\n>Task 2.2\r\n>Task 2.3\r\nTask 3\r\n";
 
         assert_eq!(setup_task_list().print_debug(), expected);
+    }
+
+    #[test]
+    fn depth_index_is_correct_on_insert() {
+        let mut task_list = setup_task_list();
+        let depth_index = &task_list.depth_index;
+
+        // Check that the right depth index exists before insert
+        assert_eq!(depth_index.get(&0).unwrap(), &vec![0, 4, 8]);
+        assert_eq!(depth_index.get(&1).unwrap(), &vec![1, 2, 3, 5, 6, 7]);
+
+        task_list.add_new_subtask(&String::from("Task 1.2.1"), 2);
+        let depth_index = &task_list.depth_index;
+
+        // Check that the right depth index exists after insert
+        assert_eq!(depth_index.get(&0).unwrap(), &vec![0, 5, 9]);
+        assert_eq!(depth_index.get(&1).unwrap(), &vec![1, 2, 4, 6, 7, 8]);
+        assert_eq!(depth_index.get(&2).unwrap(), &vec![3]);
+    }
+
+    #[test]
+    fn get_direct_subtasks_returns_correct_positions() {
+        let task_list = setup_task_list();
+
+        let subtasks = task_list.get_direct_subtasks(0);
+        assert_eq!(subtasks, vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn has_subtasks_is_accurate() {
+        let task_list = setup_task_list();
+        assert_eq!(task_list.has_subtasks(0), true);
+        assert_eq!(task_list.has_subtasks(1), false);
+        assert_eq!(task_list.has_subtasks(2), false);
+        assert_eq!(task_list.has_subtasks(3), false);
+        assert_eq!(task_list.has_subtasks(4), true);
+        assert_eq!(task_list.has_subtasks(5), false);
+        assert_eq!(task_list.has_subtasks(6), false);
+        assert_eq!(task_list.has_subtasks(7), false);
+        assert_eq!(task_list.has_subtasks(8), false);
+    }
+
+    #[test]
+    fn get_last_subtask_pos_is_correct() {
+        let task_list = setup_task_list();
+        let last_subtask_pos = task_list.get_last_subtask_pos(0);
+        assert_eq!(last_subtask_pos, 3);
     }
 }

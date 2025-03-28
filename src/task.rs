@@ -61,7 +61,7 @@ impl Task {
             start_date: None,
             due_date: None,
             task_status: TaskStatus::NotStarted,
-            execution_order: ExecutionOrder::Series,
+            execution_order: ExecutionOrder::Parallel,
             expected_duration: None,
             depth,
         }
