@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/RustTest.iml" filepath="$PROJECT_DIR$/.idea/RustTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Subtask.iml" filepath="$PROJECT_DIR$/.idea/Subtask.iml" />
     </modules>
   </component>
 </project>

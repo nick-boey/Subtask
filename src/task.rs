@@ -1,9 +1,21 @@
 ﻿use chrono::{DateTime, Local};
-use enums::{ExecutionOrder, TaskStatus};
 use std::cmp::PartialEq;
 use uuid::Uuid;
-pub mod enums;
-mod list;
+
+pub mod render;
+
+#[derive(Debug, Clone)]
+pub enum TaskStatus {
+    NotStarted,
+    InProgress(DateTime<Local>),
+    Complete(DateTime<Local>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ExecutionOrder {
+    Series,
+    Parallel,
+}
 
 /// A task to be executed.
 #[derive(Debug, Clone)]
@@ -22,10 +34,8 @@ pub struct Task {
     pub task_status: TaskStatus,
     /// The order in which the subtasks should be executed. Defaults to Series.
     pub execution_order: ExecutionOrder,
-
     /// The depth at which the task is currently sitting. Used to determine the subtasks.
     pub depth: i8,
-
     /// The automatically created creation date.
     pub creation_date: DateTime<Local>,
     /// An optional start date for the task.
@@ -55,13 +65,22 @@ impl Task {
         }
     }
 
-    /// Set the task status to a value.
-    fn task_status(&mut self, status: TaskStatus) {
-        self.task_status = status;
+    pub(crate) fn toggle_status(&mut self) {
+        match self.task_status {
+            TaskStatus::NotStarted => {
+                self.task_status = TaskStatus::InProgress(Local::now());
+            }
+            TaskStatus::InProgress(_) => {
+                self.task_status = TaskStatus::Complete(Local::now());
+            }
+            TaskStatus::Complete(_) => {
+                self.task_status = TaskStatus::NotStarted;
+            }
+        }
     }
 
     /// Set the execution order to a new value.
-    fn execution_order(&mut self, order: ExecutionOrder) {
+    pub(crate) fn execution_order(&mut self, order: ExecutionOrder) {
         self.execution_order = order;
     }
 
