@@ -1,5 +1,4 @@
 ﻿use crate::app::{App, AppMode, KeyEventHandler};
-use crate::task_list::TaskList;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use std::io;
 

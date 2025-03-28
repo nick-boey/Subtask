@@ -4,7 +4,7 @@ use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Flex, Layout, Rect},
     prelude::StatefulWidget,
-    prelude::{Line, Stylize, Text, Widget},
+    prelude::{Line, Stylize, Widget},
     symbols::border,
     widgets::Block,
     Frame,

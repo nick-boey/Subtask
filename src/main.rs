@@ -1,6 +1,5 @@
 use crate::app::App;
 use std::io;
-use tracing::debug;
 
 mod app;
 mod debug;

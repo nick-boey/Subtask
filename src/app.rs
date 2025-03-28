@@ -3,11 +3,7 @@ mod events;
 mod render;
 
 use crossterm::event::KeyEvent;
-use ratatui::{
-    style::Stylize,
-    widgets::{StatefulWidget, Widget},
-    DefaultTerminal,
-};
+use ratatui::DefaultTerminal;
 use std::io;
 #[derive(Debug, Clone, Copy, Default)]
 enum AppMode {

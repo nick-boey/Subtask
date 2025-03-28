@@ -1,8 +1,6 @@
 ﻿use crate::task::ExecutionOrder;
 use ratatui::buffer::Buffer;
-use ratatui::layout::Rect;
 use ratatui::text::Span;
-use ratatui::widgets::Widget;
 
 /// Represents a visual joiner element between tasks.
 pub(crate) struct Joiner {

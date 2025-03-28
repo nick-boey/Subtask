@@ -1,5 +1,4 @@
-﻿use crate::task::Task;
-use crate::task_list_controller::state::TaskListMode;
+﻿use crate::task_list_controller::state::TaskListMode;
 use crate::task_list_controller::TaskListController;
 use crate::ui::joiner::render_joiner;
 use crate::{task::render::TaskState, task_list::Direction};
