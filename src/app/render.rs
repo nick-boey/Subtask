@@ -3,7 +3,6 @@ use crate::ui::help;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Flex, Layout, Rect},
-    prelude::StatefulWidget,
     prelude::{Line, Stylize, Widget},
     symbols::border,
     widgets::Block,
@@ -21,7 +20,7 @@ impl Widget for &App {
         let title = Line::from(" Subtask ".bold());
         let block = Block::bordered()
             .title(title)
-            .title_bottom(footing_prompts().right_aligned())
+            .title_bottom(footer_prompts().right_aligned())
             .border_set(border::ROUNDED);
         let inner_area = block.inner(area);
         block.render(area, buf);
@@ -41,7 +40,7 @@ impl Widget for &App {
     }
 }
 
-fn footing_prompts() -> Line<'static> {
+fn footer_prompts() -> Line<'static> {
     let instructions = Line::from(vec![
         " ? ".into(),
         "<Help> ".green().bold(),
