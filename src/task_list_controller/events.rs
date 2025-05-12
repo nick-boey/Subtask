@@ -3,6 +3,8 @@ use crate::task_list_controller::state::{NewTaskDirection, NewTaskState, TaskLis
 use crate::task_list_controller::TaskListController;
 use crossterm::event::{KeyCode, KeyEvent};
 
+use super::state::TaskListState;
+
 impl KeyEventHandler for TaskListController {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match self.state.mode {
@@ -24,9 +26,7 @@ impl KeyEventHandler for TaskListController {
                 _ => {}
             },
             TaskListMode::Edit(_) => match key_event.code {
-                KeyCode::Enter => {
-                    todo!();
-                }
+                KeyCode::Enter => self.change_task_title(),
                 _ => {}
             },
             TaskListMode::Selection(_) => {}
@@ -84,6 +84,11 @@ impl TaskListController {
 
     fn delete_task(&mut self) {
         self.task_list.delete_task(self.state.selected_pos);
+    }
+
+    fn change_task_title(&mut self) {
+        match self.state {}
+        self.task_list.change_task_title(self.state);
     }
 
     /// Temporary test function that creates a task list with some tasks

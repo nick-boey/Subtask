@@ -1,6 +1,7 @@
 ﻿use crate::task::ExecutionOrder::{Parallel, Series};
 use crate::task::Task;
 use crate::task_list::{Direction, TaskList, TaskListError};
+use crate::task_list_controller::state::EditTaskState;
 
 impl TaskList {
     /// Adds a new root task to the end of the list
@@ -102,6 +103,14 @@ impl TaskList {
         task.depth += depth_change;
 
         self.rebuild_all_indices();
+        self
+    }
+
+    pub fn change_task_title(&mut self, state: EditTaskState) -> &mut Self {
+        let task = self.get_mut_task(state.pos);
+        if let Ok(task) = task {
+            task.title = state.title;
+        }
         self
     }
 
